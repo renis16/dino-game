@@ -1,0 +1,173 @@
+coded by renisi aka raketenpubs
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dino Game</title>
+  <style>
+    body {
+      background: #f4f4f4;
+      text-align: center;
+      font-family: sans-serif;
+      margin: 0;
+    }
+
+    #game {
+      width: 600px;
+      height: 200px;
+      border: 2px solid #000;
+      margin: 20px auto;
+      position: relative;
+      overflow: hidden;
+      background-color: white;
+    }
+
+    #dino {
+      width: 40px;
+      height: 40px;
+      background: blue;
+      position: absolute;
+      bottom: 0;
+      left: 50px;
+    }
+
+    .cactus {
+      width: 20px;
+      height: 40px;
+      background: green;
+      position: absolute;
+      bottom: 0;
+    }
+
+    .jump {
+      animation: jump 0.5s ease;
+    }
+
+    @keyframes jump {
+      0% { bottom: 0; }
+      50% { bottom: 80px; }
+      100% { bottom: 0; }
+    }
+
+    #scoreboard {
+      font-size: 18px;
+      margin-top: 10px;
+    }
+
+    #gameOverMessage {
+      display: none;
+      font-size: 20px;
+      color: red;
+      margin-top: 10px;
+    }
+
+    #restartBtn {
+      display: none;
+      font-size: 18px;
+      padding: 10px 20px;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Dino Game</h1>
+  <div id="scoreboard">
+    Score: <span id="score">0</span> |
+    High Score: <span id="highScore">0</span>
+  </div>
+
+  <div id="game">
+    <div id="dino"></div>
+  </div>
+
+  <p>Tap the screen to jump!</p>
+  <div id="gameOverMessage">Game Over!</div>
+  <button id="restartBtn">Start Again</button>
+
+  <script>
+    const dino = document.getElementById("dino");
+    const game = document.getElementById("game");
+    const scoreEl = document.getElementById("score");
+    const highScoreEl = document.getElementById("highScore");
+    const gameOverMsg = document.getElementById("gameOverMessage");
+    const restartBtn = document.getElementById("restartBtn");
+
+    let score = 0;
+    let gameOver = false;
+    let highScore = localStorage.getItem("highScore") || 0;
+    highScoreEl.textContent = highScore;
+
+    function jump() {
+      if (!dino.classList.contains("jump")) {
+        dino.classList.add("jump");
+        setTimeout(() => dino.classList.remove("jump"), 500);
+      }
+    }
+
+    document.addEventListener("touchstart", () => {
+      if (!gameOver) jump();
+    });
+
+    restartBtn.addEventListener("click", () => location.reload());
+
+    function startGame() {
+      setInterval(() => {
+        if (!gameOver) {
+          score++;
+          scoreEl.textContent = score;
+        }
+      }, 200);
+
+      spawnCactus();
+    }
+
+    function spawnCactus() {
+      if (gameOver) return;
+
+      const cactus = document.createElement("div");
+      cactus.classList.add("cactus");
+      cactus.style.left = "600px";
+      game.appendChild(cactus);
+
+      let moveInterval = setInterval(() => {
+        if (gameOver) {
+          clearInterval(moveInterval);
+          cactus.remove();
+          return;
+        }
+
+        let cactusLeft = parseInt(cactus.style.left);
+        cactusLeft -= 5;
+        cactus.style.left = cactusLeft + "px";
+
+        // Check collision
+        const dinoTop = parseInt(window.getComputedStyle(dino).getPropertyValue("top"));
+        if (cactusLeft < 90 && cactusLeft > 40 && dinoTop > 140) {
+          gameOver = true;
+          clearInterval(moveInterval);
+          showGameOver();
+        }
+
+        // Remove off-screen
+        if (cactusLeft < -20) {
+          cactus.remove();
+          clearInterval(moveInterval);
+        }
+      }, 20);
+
+      // Spawn next cactus randomly between 1s to 2.5s
+      let nextTime = Math.random() * 1500 + 1000;
+      setTimeout(spawnCactus, nextTime);
+    }
+
+    function showGameOver() {
+      if (score > highScore) {
+        localStorage.setItem("highScore", score);
+      }
+      gameOverMsg.style.display = "block";
+      restartBtn.style.display = "inline-block";
+    }
+
+    window.onload = startGame;
+  </script>
+</body>
+</html>
